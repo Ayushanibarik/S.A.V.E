@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S.A.V.E. – Live Emergency Coordination</title>
+  <style>
+    :root {
+      --bg-primary: #0f1622;
+      --bg-secondary: #151f2e;
+      --bg-panel: #1a2536;
+      --bg-footer: #0c1018;
+      --border: rgba(255, 255, 255, 0.1);
+      --border-strong: rgba(255, 255, 255, 0.15);
+      --text-primary: #e9edf5;
+      --text-secondary: #c3cad6;
+      --text-muted: #8a94a6;
+      --accent-blue: #4a7fc7;
+      --status-stable: #3a7850;
+      --status-warning: #c49318;
+      --status-critical: #c44a4d;
+    }
+
+    .light-mode {
+      --bg-primary: #eaecf0;
+      --bg-secondary: #dfe2e8;
+      --bg-panel: #ffffff;
+      --bg-footer: #d0d4dc;
+      --border: rgba(0, 0, 0, 0.12);
+      --border-strong: rgba(0, 0, 0, 0.18);
+      --text-primary: #1a1f2e;
+      --text-secondary: #3d4556;
+      --text-muted: #5a6478;
+    }
+
+    .high-contrast {
+      --bg-primary: #080c12;
+      --bg-secondary: #0e1420;
+      --bg-panel: #141c28;
+      --border: rgba(255, 255, 255, 0.18);
+      --border-strong: rgba(255, 255, 255, 0.25);
+      --text-primary: #ffffff;
+      --text-secondary: #d8dce8;
+      --text-muted: #a0a8b8;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", system-ui, Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.45;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-strong);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .system-name {
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: 0.3px;
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--status-stable);
+    }
+
+    .status-dot.offline {
+      background: var(--status-critical);
+    }
+
+    .status-dot.demo {
+      background: var(--status-warning);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 12px;
+    }
+
+    .clinical-view {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .last-updated {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .theme-toggle,
+    .contrast-toggle {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 36px;
+    }
+
+    .theme-toggle:hover,
+    .contrast-toggle:hover {
+      background: var(--bg-secondary);
+      border-color: var(--accent-blue);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1px;
+      background: var(--border);
+      height: calc(100vh - 76px);
+    }
+
+    .left-panel,
+    .right-panel {
+      background: var(--bg-primary);
+      padding: 12px 14px;
+      overflow-y: auto;
+    }
+
+    .section-header {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid var(--border-strong);
+    }
+
+    .section-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+
+    .map-placeholder {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-strong);
+      height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 6px;
+    }
+
+    .map-placeholder svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-region {
+      fill: var(--bg-panel);
+      stroke: var(--border-strong);
+      stroke-width: 1.5;
+    }
+
+    .map-label {
+      fill: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .map-marker {
+      r: 7;
+      opacity: 0.9;
+    }
+
+    .map-marker.critical {
+      fill: var(--status-critical);
+    }
+
+    .map-marker.warning {
+      fill: var(--status-warning);
+    }
+
+    .map-marker.stable {
+      fill: var(--status-stable);
+    }
+
+    .map-legend {
+      display: flex;
+      gap: 14px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .legend-dot.critical {
+      background: var(--status-critical);
+    }
+
+    .legend-dot.stable {
+      background: var(--status-stable);
+    }
+
+    .legend-dot.warning {
+      background: var(--status-warning);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-bottom: 12px;
+      line-height: 1.35;
+    }
+
+    th {
+      text-align: left;
+      font-weight: 500;
+      padding: 8px 8px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-strong);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    tr.row-critical {
+      border-left: 4px solid var(--status-critical);
+    }
+
+    tr.row-warning {
+      border-left: 4px solid var(--status-warning);
+    }
+
+    tr.row-stable {
+      border-left: 4px solid var(--status-stable);
+    }
+
+    .cell-facility {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .cell-id {
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .cell-status {
+      display: inline-block;
+      padding: 3px 6px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      border-radius: 2px;
+    }
+
+    .cell-status.critical {
+      background: var(--status-critical);
+      color: #fff;
+    }
+
+    .cell-status.warning {
+      background: var(--status-warning);
+      color: #fff;
+    }
+
+    .cell-status.stable {
+      background: var(--status-stable);
+      color: #fff;
+    }
+
+    .cell-num {
+      text-align: right;
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .cell-num.critical {
+      color: var(--status-critical);
+      font-weight: 700;
+    }
+
+    .cell-num.warning {
+      color: var(--status-warning);
+      font-weight: 600;
+    }
+
+    .cell-num.icu {
+      font-weight: 600;
+    }
+
+    .cell-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 400;
+      display: block;
+    }
+
+    .cell-no-capacity {
+      font-size: 10px;
+      color: var(--status-critical);
+      font-weight: 700;
+      display: block;
+      text-transform: uppercase;
+    }
+
+    .cell-trend {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .cell-trend.up {
+      color: var(--status-warning);
+    }
+
+    .cell-trend.down {
+      color: var(--status-stable);
+    }
+
+    .supply-strip {
+      display: flex;
+      gap: 8px;
+      background: var(--bg-secondary);
+      padding: 10px;
+      border: 1px solid var(--border-strong);
+    }
+
+    .supply-item {
+      flex: 1;
+      text-align: center;
+      padding: 6px;
+    }
+
+    .supply-value {
+      font-size: 20px;
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    .supply-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .supply-bar {
+      height: 4px;
+      background: var(--border);
+      margin-top: 5px;
+      border-radius: 2px;
+    }
+
+    .supply-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--status-stable);
+    }
+
+    .supply-bar-fill.low {
+      background: var(--status-warning);
+    }
+
+    .supply-bar-fill.critical {
+      background: var(--status-critical);
+    }
+
+    .ambulance-list {
+      list-style: none;
+    }
+
+    .ambulance-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 10px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-strong);
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+
+    .ambulance-id {
+      font-family: monospace;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .ambulance-status {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .ambulance-status.available {
+      color: var(--status-stable);
+    }
+
+    .ambulance-status.enroute {
+      color: var(--status-warning);
+    }
+
+    .ambulance-eta {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .metrics-board {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .metric-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-strong);
+      padding: 12px;
+      text-align: center;
+    }
+
+    .metric-box.primary {
+      grid-column: span 2;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    .metric-value.primary {
+      font-size: 36px;
+    }
+
+    .metric-value.critical {
+      color: var(--status-critical);
+    }
+
+    .metric-value.warning {
+      color: var(--status-warning);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .last-action {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-strong);
+      padding: 10px;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .last-action-label {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    .last-action-text {
+      color: var(--text-primary);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .override-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 10px;
+      padding: 8px 10px;
+      background: var(--bg-secondary);
+      border-left: 3px solid var(--accent-blue);
+    }
+
+    .decision-log {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .decision-item {
+      padding: 10px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-strong);
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+
+    .decision-time {
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .decision-summary {
+      margin-bottom: 5px;
+      line-height: 1.4;
+      font-weight: 500;
+    }
+
+    .decision-reason {
+      font-size: 12px;
+      color: var(--text-secondary);
+      padding-left: 10px;
+      border-left: 3px solid var(--border-strong);
+      display: none;
+      line-height: 1.4;
+      margin-top: 6px;
+    }
+
+    .decision-item.expanded .decision-reason {
+      display: block;
+    }
+
+    .decision-toggle {
+      font-size: 12px;
+      color: var(--accent-blue);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px 0;
+      font-weight: 600;
+      min-height: 28px;
+    }
+
+    .decision-toggle:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: var(--bg-footer);
+      border-top: 1px solid var(--border-strong);
+    }
+
+    .footer-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 10px 14px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-panel);
+      color: var(--text-primary);
+      cursor: pointer;
+      min-height: 40px;
+    }
+
+    button:hover {
+      background: var(--bg-secondary);
+      border-color: var(--accent-blue);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    button.primary {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #fff;
+    }
+
+    button.primary:hover {
+      opacity: 0.9;
+    }
+
+    .sim-indicator {
+      font-size: 11px;
+      color: var(--status-warning);
+      font-weight: 700;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="header-left">
+      <span class="system-name">S.A.V.E. – LIVE EMERGENCY COORDINATION</span>
+      <div class="system-status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Connecting...</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="clinical-view">Clinical operations view</span>
+      <span class="last-updated">Last update: <span id="lastUpdated">--</span></span>
+      <button class="contrast-toggle" id="contrastToggle">High-contrast</button>
+      <button class="theme-toggle" id="themeToggle">Light mode</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="left-panel">
+      <div class="section-header">Operational Area Overview</div>
+      <div class="map-placeholder">
+        <svg viewBox="0 0 400 130">
+          <rect class="map-region" x="10" y="8" width="170" height="114" rx="2" />
+          <rect class="map-region" x="190" y="8" width="85" height="55" rx="2" />
+          <rect class="map-region" x="190" y="70" width="85" height="52" rx="2" />
+          <rect class="map-region" x="285" y="8" width="105" height="114" rx="2" />
+          <circle class="map-marker critical" id="markerHA" cx="75" cy="50" />
+          <circle class="map-marker stable" id="markerHB" cx="232" cy="35" />
+          <circle class="map-marker warning" id="markerHC" cx="340" cy="75" />
+          <text class="map-label" x="75" y="72">H-A</text>
+          <text class="map-label" x="232" y="57">H-B</text>
+          <text class="map-label" x="340" y="97">H-C</text>
+        </svg>
+      </div>
+      <div class="map-legend">
+        <span class="legend-item"><span class="legend-dot critical"></span> Critical</span>
+        <span class="legend-item"><span class="legend-dot warning"></span> Limited</span>
+        <span class="legend-item"><span class="legend-dot stable"></span> Operational</span>
+      </div>
+      <div class="section-note">Facility positions for coordination reference (not to scale)</div>
+
+      <div class="section-header">Healthcare Facility Status</div>
+      <table id="hospitalTable">
+        <thead>
+          <tr>
+            <th>Facility</th>
+            <th>Status</th>
+            <th>Triage Load</th>
+            <th style="text-align:right">General Beds</th>
+            <th style="text-align:right">ICU Beds</th>
+            <th style="text-align:right">Oxygen</th>
+            <th style="text-align:right">Inflow</th>
+          </tr>
+        </thead>
+        <tbody id="hospitalBody"></tbody>
+      </table>
+
+      <div class="section-header">Critical Supply Inventory</div>
+      <div class="supply-strip" id="supplyStrip"></div>
+
+      <div class="footer-controls" style="margin-top: 12px;">
+        <button class="primary" id="btnStart">Start Response</button>
+        <button id="btnPause" disabled>Pause System</button>
+        <button id="btnStep">Step Simulation</button>
+        <button id="btnTrigger">Trigger Incident</button>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="section-header">Active Ambulance Units</div>
+      <ul class="ambulance-list" id="ambulanceList" aria-label="Ambulance status"></ul>
+
+      <div class="section-header" style="margin-top:10px">Response Performance</div>
+      <div class="metrics-board" id="metricsBoard"></div>
+
+      <div class="last-action" id="lastActionBox">
+        <div class="last-action-label">Last system action:</div>
+        <div class="last-action-text" id="lastActionText">Awaiting simulation start...</div>
+      </div>
+
+      <div class="override-note">Manual override available via regional authority approval</div>
+
+      <div class="section-header">Automated Decision Log</div>
+      <div class="decision-log" id="decisionLog" aria-live="polite" role="log"></div>
+    </div>
+  </main>
+
+  <footer>
+    <div>
+      <span class="sim-indicator" id="demoIndicator" style="display:none">SIMULATION MODE · LIVE UPDATE LOOP</span>
+    </div>
+    <div>
+      <button id="btnDownload">Download Decision Log</button>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      // ============================================================
+      // CONFIGURATION - Update API_BASE_URL for production deployment
+      // For local development: '' (empty string uses relative paths)
+      // For production: 'https://your-backend-url.onrender.com'
+      // ============================================================
+      const API_BASE_URL = '';
+
+      const DEMO_DATA = {
+        timestamp: "2026-02-10T12:00:00Z",
+        hospitals: [
+          { id: "H-A", name: "Hospital A", total_beds: 100, available_beds: 0, icu_total: 10, icu_available: 1, oxygen_units: 50, inflow_rate: 8, inflow_trend: "up" },
+          { id: "H-B", name: "Hospital B", total_beds: 120, available_beds: 30, icu_total: 20, icu_available: 8, oxygen_units: 120, inflow_rate: 2, inflow_trend: "down" },
+          { id: "H-C", name: "Field Clinic C", total_beds: 40, available_beds: 10, icu_total: 2, icu_available: 0, oxygen_units: 20, inflow_rate: 5, inflow_trend: "up" }
+        ],
+        ambulances: [
+          { id: "AMB-1", status: "available", eta_to_incident: 4, assigned_to: null },
+          { id: "AMB-2", status: "enroute", eta_to_hospital: 7, assigned_to: "Hospital B" }
+        ],
+        supplies: { oxygen: 190, meds: 500, water: 1000, food: 800 },
+        decisions: [
+          { time: "12:41", summary: "Mass-casualty incident confirmed. Surge response initiated.", reason: "Projected patient inflow exceeds baseline emergency capacity. Surge protocols activated to preserve continuity of critical care." },
+          { time: "12:45", summary: "Hospital A declared critical care saturated. New admissions suspended.", reason: "No remaining ICU capacity or oxygen reserve to safely support additional critical patients." },
+          { time: "12:46", summary: "Patient diversion approved: 12 critical cases transferred from Hospital A to Hospital B.", reason: "Hospital A has reached full capacity with no remaining ICU availability. Hospital B maintains sufficient ICU reserve and oxygen supply to safely absorb additional critical cases." },
+          { time: "12:53", summary: "No ICU capacity available within the immediate catchment area. Escalation initiated to regional authority.", reason: "Local critical care resources exhausted. Escalation required to activate regional surge protocols and inter-district transfer pathways." }
+        ],
+        metrics: { avg_response_time: 6.1, unserved_critical: 3, overload_prevented: 1 },
+        lastAction: "Patient diversion approved: critical cases transferred to Hospital B"
+      };
+
+      let state = JSON.parse(JSON.stringify(DEMO_DATA));
+      let isDemo = true;
+      let isRunning = false;
+      let pollInterval = null;
+
+      const $ = id => document.getElementById(id);
+
+      function getHospitalStatus(h) {
+        const bedUtil = 1 - (h.available_beds / h.total_beds);
+        const icuUtil = 1 - (h.icu_available / h.icu_total);
+        if (bedUtil >= 0.95 || icuUtil >= 0.9 || h.oxygen_units < 30) return 'critical';
+        if (bedUtil >= 0.8 || icuUtil >= 0.7 || h.oxygen_units < 60) return 'warning';
+        return 'stable';
+      }
+
+      function getStatusLabel(status) {
+        if (status === 'critical') return 'CRITICAL – AT CAPACITY';
+        if (status === 'warning') return 'LIMITED CAPACITY';
+        return 'OPERATIONAL';
+      }
+
+      function getTriageLoad(h) {
+        const icuUtil = 1 - (h.icu_available / h.icu_total);
+        if (h.icu_available === 0 || icuUtil >= 0.9) return 'HIGH';
+        if (icuUtil >= 0.5) return 'MODERATE';
+        return 'LOW';
+      }
+
+      function getOxygenDuration(h) {
+        if (h.inflow_rate <= 0) return '—';
+        const hours = Math.round(h.oxygen_units / (h.inflow_rate * 1.5));
+        return `≈ ${hours} hrs`;
+      }
+
+      function getTotalICU() {
+        return state.hospitals.reduce((sum, h) => sum + h.icu_available, 0);
+      }
+
+      function renderHospitals() {
+        const tbody = $('hospitalBody');
+        tbody.innerHTML = '';
+        state.hospitals.forEach(h => {
+          const status = getHospitalStatus(h);
+          const triageLoad = getTriageLoad(h);
+          const oxyDuration = getOxygenDuration(h);
+          const tr = document.createElement('tr');
+          tr.className = 'row-' + status;
+
+          let icuCell = `<span class="cell-num icu ${h.icu_available === 0 ? 'critical' : ''}">${h.icu_available}/${h.icu_total}</span>`;
+          if (h.icu_available === 0) {
+            icuCell += `<span class="cell-no-capacity">NO ICU CAPACITY</span>`;
+          }
+
+          const trendArrow = h.inflow_trend === 'up' ? '↑' : h.inflow_trend === 'down' ? '↓' : '';
+          const trendClass = h.inflow_trend === 'up' ? 'up' : 'down';
+
+          tr.innerHTML = `
+                        <td><span class="cell-facility">${h.name}</span> <span class="cell-id">(${h.id})</span></td>
+                        <td><span class="cell-status ${status}">${getStatusLabel(status)}</span></td>
+                        <td><span class="cell-status ${triageLoad === 'HIGH' ? 'critical' : triageLoad === 'MODERATE' ? 'warning' : 'stable'}">${triageLoad}</span></td>
+                        <td class="cell-num ${h.available_beds === 0 ? 'critical' : ''}">${h.available_beds}/${h.total_beds}</td>
+                        <td>${icuCell}</td>
+                        <td class="cell-num ${h.oxygen_units < 30 ? 'critical' : h.oxygen_units < 60 ? 'warning' : ''}">${h.oxygen_units}<span class="cell-sub">${oxyDuration}</span></td>
+                        <td class="cell-num">${h.inflow_rate}/hr <span class="cell-trend ${trendClass}">${trendArrow}</span></td>
+                    `;
+          tbody.appendChild(tr);
+
+          const marker = $('marker' + h.id.replace('-', ''));
+          if (marker) {
+            marker.classList.remove('critical', 'warning', 'stable');
+            marker.classList.add(status);
+          }
+        });
+      }
+
+      function renderSupplies() {
+        const strip = $('supplyStrip');
+        const maxes = { oxygen: 300, meds: 800, water: 1500, food: 1200 };
+        const labels = { oxygen: 'Oxygen (Units)', meds: 'Medical Supplies', water: 'Water Supply', food: 'Food Supply' };
+        strip.innerHTML = '';
+        for (const [key, val] of Object.entries(state.supplies)) {
+          const pct = (val / maxes[key]) * 100;
+          const lvl = pct < 30 ? 'critical' : pct < 60 ? 'low' : '';
+          strip.innerHTML += `
+                        <div class="supply-item">
+                            <div class="supply-value">${val}</div>
+                            <div class="supply-label">${labels[key] || key}</div>
+                            <div class="supply-bar"><div class="supply-bar-fill ${lvl}" style="width:${pct}%"></div></div>
+                        </div>
+                    `;
+        }
+      }
+
+      function renderAmbulances() {
+        const list = $('ambulanceList');
+        list.innerHTML = '';
+        state.ambulances.forEach(a => {
+          const li = document.createElement('li');
+          li.className = 'ambulance-item';
+          let statusText = '';
+          let eta = '';
+          if (a.status === 'enroute') {
+            statusText = 'EN ROUTE → ' + (a.assigned_to || 'FACILITY');
+            eta = `ETA ${a.eta_to_hospital || '?'} min`;
+          } else {
+            statusText = 'AVAILABLE FOR DISPATCH';
+            eta = `ETA ${a.eta_to_incident || '?'} min to incident`;
+          }
+          li.innerHTML = `
+                        <span class="ambulance-id">${a.id}</span>
+                        <span class="ambulance-status ${a.status}">${statusText}</span>
+                        <span class="ambulance-eta">${eta}</span>
+                    `;
+          list.appendChild(li);
+        });
+      }
+
+      function renderMetrics() {
+        const board = $('metricsBoard');
+        const m = state.metrics;
+        const totalICU = getTotalICU();
+        board.innerHTML = `
+                    <div class="metric-box primary">
+                        <div class="metric-value primary">${m.avg_response_time.toFixed(1)} min</div>
+                        <div class="metric-label">Average Time to Care</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-value ${m.unserved_critical > 0 ? 'critical' : ''}">${m.unserved_critical}</div>
+                        <div class="metric-label">Critical Patients Waiting</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-value">${totalICU}</div>
+                        <div class="metric-label">ICU Beds Available (System)</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-value">${m.overload_prevented}</div>
+                        <div class="metric-label">Overloads Prevented</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-value">${state.hospitals.length}</div>
+                        <div class="metric-label">Active Care Facilities</div>
+                    </div>
+                `;
+      }
+
+      function renderLastAction() {
+        $('lastActionText').textContent = state.lastAction || 'Awaiting simulation start...';
+      }
+
+      function renderDecisions() {
+        const log = $('decisionLog');
+        log.innerHTML = '';
+        state.decisions.slice().reverse().forEach((d) => {
+          const div = document.createElement('div');
+          div.className = 'decision-item';
+          div.innerHTML = `
+                        <div class="decision-time">${d.time}</div>
+                        <div class="decision-summary">${d.summary}</div>
+                        <button class="decision-toggle" aria-expanded="false">▶ Clinical rationale</button>
+                        <div class="decision-reason">${d.reason}</div>
+                    `;
+          div.querySelector('.decision-toggle').onclick = function () {
+            const expanded = div.classList.toggle('expanded');
+            this.textContent = expanded ? '▼ Hide rationale' : '▶ Clinical rationale';
+            this.setAttribute('aria-expanded', expanded);
+          };
+          log.appendChild(div);
+        });
+      }
+
+      function updateTimestamp() {
+        const ts = state.timestamp || new Date().toISOString();
+        const d = new Date(ts);
+        $('lastUpdated').textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+
+      function renderAll() {
+        renderHospitals();
+        renderSupplies();
+        renderAmbulances();
+        renderMetrics();
+        renderLastAction();
+        renderDecisions();
+        updateTimestamp();
+      }
+
+      function setStatus(online, demo) {
+        const dot = $('statusDot');
+        const text = $('statusText');
+        const indicator = $('demoIndicator');
+        dot.classList.remove('offline', 'demo');
+        if (!online) {
+          dot.classList.add('offline');
+          text.textContent = 'Offline';
+        } else if (demo) {
+          dot.classList.add('demo');
+          text.textContent = 'SIMULATION MODE · LIVE UPDATE LOOP';
+          indicator.style.display = 'inline';
+        } else {
+          text.textContent = 'Connected';
+          indicator.style.display = 'none';
+        }
+      }
+
+      async function fetchState() {
+        try {
+          const resp = await fetch(API_BASE_URL + '/state');
+          if (!resp.ok) throw new Error('Not OK');
+          const data = await resp.json();
+          if (data.hospitals) state.hospitals = Object.values(data.hospitals);
+          if (data.ambulances) state.ambulances = Object.values(data.ambulances);
+          if (data.supply) state.supplies = data.supply.inventory || state.supplies;
+          state.timestamp = new Date().toISOString();
+          isDemo = false;
+          setStatus(true, false);
+          renderAll();
+        } catch (e) {
+          isDemo = true;
+          setStatus(true, true);
+        }
+      }
+
+      async function fetchDecisions() {
+        try {
+          const resp = await fetch(API_BASE_URL + '/decisions');
+          if (!resp.ok) return;
+          const data = await resp.json();
+          if (Array.isArray(data)) {
+            data.forEach(d => {
+              if (d.explanation && !state.decisions.find(x => x.summary === d.explanation)) {
+                const newDecision = {
+                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  summary: d.explanation,
+                  reason: d.type || 'System decision based on current capacity and safety constraints.'
+                };
+                state.decisions.push(newDecision);
+                state.lastAction = d.explanation;
+              }
+            });
+            renderDecisions();
+            renderLastAction();
+          }
+        } catch (e) { }
+      }
+
+      async function fetchMetrics() {
+        try {
+          const resp = await fetch(API_BASE_URL + '/metrics');
+          if (!resp.ok) return;
+          const data = await resp.json();
+          if (data.current) {
+            state.metrics.avg_response_time = data.current.avg_response_time || state.metrics.avg_response_time;
+            state.metrics.overload_prevented = data.current.overloads_prevented || 0;
+            state.metrics.unserved_critical = data.current.patients_waiting || 0;
+            renderMetrics();
+          }
+        } catch (e) { }
+      }
+
+      async function startSim() {
+        try { await fetch(API_BASE_URL + '/simulate/start', { method: 'POST' }); } catch (e) { }
+      }
+
+      async function stepSim() {
+        try {
+          await fetch(API_BASE_URL + '/simulate/step', { method: 'POST' });
+          await fetchState();
+          await fetchDecisions();
+          await fetchMetrics();
+        } catch (e) { }
+      }
+
+      function startPolling() {
+        if (pollInterval) return;
+        pollInterval = setInterval(async () => {
+          await fetchState();
+          await fetchDecisions();
+          await fetchMetrics();
+        }, 3000);
+      }
+
+      function stopPolling() {
+        if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+      }
+
+      $('btnStart').onclick = async function () {
+        await startSim();
+        await fetchState();
+        isRunning = true;
+        $('btnStart').disabled = true;
+        $('btnPause').disabled = false;
+        startPolling();
+      };
+
+      $('btnPause').onclick = function () {
+        stopPolling();
+        isRunning = false;
+        $('btnStart').disabled = false;
+        $('btnPause').disabled = true;
+      };
+
+      $('btnStep').onclick = stepSim;
+
+      $('btnTrigger').onclick = function () {
+        const events = [
+          { summary: "Oxygen reserves at Hospital A have fallen below the safe operating threshold.", reason: "Current oxygen availability is insufficient to sustain projected respiratory demand. Immediate mitigation required to prevent interruption of critical care." },
+          { summary: "Ambulance unit AMB-3 has been deployed to the incident site for patient retrieval.", reason: "Deployment initiated to maintain timely access to definitive care and prevent delays in triage." },
+          { summary: "Supplemental oxygen supplies reallocated to Hospital A to support ongoing respiratory care.", reason: "Reallocation performed to stabilize oxygen availability and prevent treatment delays for high-dependency patients." },
+          { summary: "No ICU capacity available within the immediate catchment area. Escalation initiated to regional authority.", reason: "Local critical care resources exhausted. Escalation required to activate regional surge protocols and inter-district transfer pathways." },
+          { summary: "Field Clinic C designated for moderate-injury stabilization only.", reason: "Facility lacks ICU capability but can safely manage non-critical trauma and offload emergency departments." }
+        ];
+        const evt = events[Math.floor(Math.random() * events.length)];
+        const newDecision = {
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          summary: evt.summary,
+          reason: evt.reason
+        };
+        state.decisions.push(newDecision);
+        state.lastAction = evt.summary;
+        renderDecisions();
+        renderLastAction();
+      };
+
+      $('btnDownload').onclick = function () {
+        const blob = new Blob([JSON.stringify(state.decisions, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'decision_log.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      $('themeToggle').onclick = function () {
+        document.body.classList.remove('high-contrast');
+        document.body.classList.toggle('light-mode');
+        this.textContent = document.body.classList.contains('light-mode') ? 'Dark mode' : 'Light mode';
+      };
+
+      $('contrastToggle').onclick = function () {
+        document.body.classList.remove('light-mode');
+        document.body.classList.toggle('high-contrast');
+        this.textContent = document.body.classList.contains('high-contrast') ? 'Normal contrast' : 'High-contrast';
+      };
+
+      setStatus(true, true);
+      renderAll();
+      fetchState();
+    })();
+  </script>
+</body>
+
+</html>
